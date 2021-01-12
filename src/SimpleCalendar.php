@@ -36,12 +36,15 @@ class SimpleCalendar {
 		'event'        => 'event',
 		'events'       => 'events',
 		'disable'      => 'disable',
+		'busy'		   => 'busy',
 		'top'          => 'top',
 		'previous'     => 'previous',
 		'next'         => 'next',
 	];
 
 	protected $dailyHtml = [];
+	protected $busyDays = [];
+	protected $busyWeeklyDays = [];
 	protected $offset = 0;
 
 	/**
@@ -136,6 +139,35 @@ class SimpleCalendar {
 		}
 
 		$this->weekDayNames = $weekDayNames ? array_values($weekDayNames) : null;
+	}
+
+	/**
+	 *	Provide an array of days to be marked as busy
+	 *	@param array $busyDays e.g. ['2021-02-15', '2021-03-18']
+	 *  @param true|false $markeBusy if true / false == unavaialble
+	 */
+	public function addBusyDays(array $busyDays = [], bool $markBusy = true ){
+		if(!is_array($busyDays) || empty($busyDays)){
+			throw new \InvalidArgumentException('array of dates requied');
+		}
+		foreach ($busyDays as $busyDay) {
+			if(!preg_match("/^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))$/", $busyDay)){
+				throw new \InvalidArgumentException('dates format YYYY-MM-DD required');
+			}
+			$this->busyDays[$busyDay] = $markBusy;
+		}
+	}
+
+	public function addBusyWeekly(array $busyWeeklyDays = [], $markBusy = true){
+		if(!is_array($busyWeeklyDays) || empty($busyWeeklyDays)){
+			throw new \InvalidArgumentException('array with names of the week requied');
+		}
+		foreach ($busyWeeklyDays as $busyWeeklyDay) {
+			if(!preg_match("/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i", $busyWeeklyDay)){
+				throw new \InvalidArgumentException('name of day of the week required');
+			}
+			$this->busyWeeklyDays[date('N', strtotime($busyWeeklyDay))] = $markBusy;
+		}
 	}
 
 	/**
@@ -301,7 +333,15 @@ TAG
 			}
 
 			if($isToday){
-				$out .= '<td class="' . $this->classes['today'] . '">';
+				$out .= '<td class="' . $this->classes['today'];
+				if(array_key_exists($count, $this->busyWeeklyDays)){
+					if($this->busyWeeklyDays[$count] == true){
+						$out .= ' ' . $this->classes['busy'];
+					} else {
+						$out .= ' ' . $this->classes['disable'];
+					}
+				}
+				$out .= '">';
 			} elseif( // check for days from the past
 				$date->format('Y') < $today['year']
 				|| $date->format('Y') == $today['year'] && $date->format('n') < $today['mon']
@@ -309,6 +349,12 @@ TAG
 				
 			){
 				$out .= '<td class="' . $this->classes['disable'] . '">';
+			} elseif(array_key_exists($count, $this->busyWeeklyDays)) {
+				if($this->busyWeeklyDays[$count] == true){
+					$out .= '<td class="' . $this->classes['busy'] . '">';
+				} else {
+					$out .= '<td class="' . $this->classes['disable'] . '">';
+				}
 			} else {
 				$out .= '<td>';
 			}
