@@ -1,5 +1,5 @@
 {
-	"name"       : "krzysiaczek/simplecalendar",
+	"name"       : "loopla/simplecalendar",
 	"type"       : "library",
 	"description": "An extension of light, easy to use calendar rendering library written by Jesse G. Donat",
 	"keywords"   : ["calendar"],
